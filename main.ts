@@ -18,9 +18,19 @@ if (LINE.trim() !== LINE || LINE.includes("\n")) {
 mkdirSync(outDir, { recursive: true });
 writeFileSync(target, LINE, "utf8");
 
-// Read the file back and confirm it holds exactly the line, byte for byte.
-const back = readFileSync(target, "utf8");
-if (back !== LINE) {
+// Read the file back as bytes and confirm it holds exactly the line:
+// same UTF-8 bytes, same byte length, and no trailing newline.
+const written = readFileSync(target);
+const expected = Buffer.from(LINE, "utf8");
+if (!written.equals(expected)) {
   throw new Error("read-back mismatch: entry.txt does not match the line");
+}
+if (written.length !== LINE.length) {
+  throw new Error(
+    `byte-length mismatch: wrote ${written.length} bytes, expected ${LINE.length}`,
+  );
+}
+if (written[written.length - 1] === 0x0a) {
+  throw new Error("entry.txt must not end with a newline");
 }
 console.log(`wrote ${LINE.length} characters to ${target}`);
